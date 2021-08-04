@@ -5,5 +5,11 @@ MathX is a open source CAS replica of Mathematics. It's first purpose is to beco
 The second thing is never forget the first.
 
 
-# H
+## To do List:
+
+### 2021/8/4
+1. Add benchmark of parsing ast to expression.
+2. Add unit test of parsing ast to expression.
+3. Add benchmark of number operations, sympy, mpmath, raw python's math.
+
 

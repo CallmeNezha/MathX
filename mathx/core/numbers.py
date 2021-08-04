@@ -111,12 +111,6 @@ class Integer(Number):
         obj._value = int(value)
         return obj
 
-    def __int__(self):
-        return self._value
-
-    def __float__(self):
-        return float(self._value)
-
 
 class Rational(Number):
     """
@@ -125,17 +119,11 @@ class Rational(Number):
 
     __slots__ = ['_value']
 
-
     def __new__(cls, numerator, denominator=1) -> 'Rational':
         obj = super(Rational, cls).__new__(cls)
         obj._value = sympy.Rational(numerator, denominator)
         return obj
 
-    def __int__(self):
-        return int(self._value)
-
-    def __float__(self):
-        return float(self._value)
 
 
 class Real(Number):
@@ -178,9 +166,6 @@ class Real(Number):
         else:
             return PrecisionReal.__new__(PrecisionReal, value)
 
-    @property
-    def value(self) -> Union[float, sympy.Float]:
-        return self._value
 
 
 class MachineReal(Real):
@@ -200,11 +185,8 @@ class MachineReal(Real):
         obj._value = value
         return obj
 
-    def __int__(self):
-        return int(self._value)
-
-    def __float__(self):
-        return self._value
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self._value}>"
 
 
 class PrecisionReal(Real):
@@ -223,21 +205,21 @@ class PrecisionReal(Real):
         obj._value = sympy.Float(value)
         return obj
 
-    def __int__(self):
-        return int(self._value)
-    
-    def __float__(self):
-        return float(self._value)
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self._value}>"
 
 
 class Complex(Number):
     """
-    Complex number Hummm.
+    Complex number of MathX
+
+    If create with all Integer it returns: Integer + I * Integer.
+    If imaginary is Integer Zero it returns: Integer
     """
 
     __slots__ = ['_real', '_imag']
 
-    def __new__(cls, real, imag):
+    def __new__(cls, real: Union['Real','Integer'], imag: Union['Real','Integer']) -> Number:
         self = super(Complex, cls).__new__(cls)
 
         if isinstance(real, Complex) or not isinstance(real, Number):
@@ -246,7 +228,8 @@ class Complex(Number):
         if isinstance(imag, Complex) or not isinstance(imag, Number):
             raise ValueError("Argument 'imag' must be a real number.")
 
-        if imag.sameQ(Integer0):
+        # Here to implement explicitly avoiding loop import of compare.
+        if isinstance(imag, Integer) and imag._value == Integer0._value:
             return real
 
         # Round to lower 
@@ -256,9 +239,54 @@ class Complex(Number):
         if isinstance(imag, MachineReal) and not isinstance(real, MachineReal):
             real = roundx(real)
 
-        self.real = real
-        self.imag = imag
+        self._real = real
+        self._imag = imag
         return self
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self._real, self._imag}>"
+
+
+def to_sympy(number: Number) -> sympy.Number:
+    """
+    Convert MathX to simpy category.
+    """
+
+    if isinstance(number, Integer):
+        return sympy.Integer(number._value)
+
+    elif isinstance(number, Rational):
+        return number._value
+
+    elif isinstance(number, MachineReal):
+        return sympy.Float(number._value)
+
+    elif isinstance(number, PrecisionReal):
+        return number._value
+
+    elif isinstance(number, Complex):
+        return number._real + sympy.I * number._imag
+
+
+def to_python(number: Number) -> [float,int,complex]:
+    """
+    Covert MathX to pure python category.
+    """
+
+    if isinstance(number, Integer):
+        return number._value
+
+    elif isinstance(number, Rational):
+        return float(number._value)
+
+    elif isinstance(number, MachineReal):
+        return number._value
+
+    elif isinstance(number, PrecisionReal):
+        return float(number._value)
+
+    elif isinstance(number, Complex):
+        return complex(to_python(number._real), to_python(number._imag))
 
 
 
@@ -268,4 +296,6 @@ Integer0 = Integer(0)
 Integer1 = Integer(1)
 
 __all__ = ['precision', 'roundx', 'Number', 'Integer', 'Real', 'MachineReal', 
-           'PrecisionReal', 'Complex', 'Integer0', 'Integer1']
+           'PrecisionReal', 'Complex', 'Integer0', 'Integer1', 'machine_precision', 'C',
+           'Rational'
+          ]

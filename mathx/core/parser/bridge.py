@@ -6,9 +6,11 @@ import sympy
 from math import ceil, log10
 from typing import Tuple, Union
 from mathics_parser.ast import Symbol, String, Number, Filename
-from .. import expression as expr
-from ..numbers import machine_precision, C
 
+import mathx.core.string
+from .. import expression as expr
+from .. import numbers as nums
+from ..numbers import machine_precision, C
 
 
 def reconstruct_digits(bits) -> int:
@@ -200,27 +202,27 @@ def convert_Number(node: Number) -> Union[Tuple[str, int, int],
         return "PrecisionReal", result, prec10
 
 
-def make_Symbol(self, s):
+def make_Symbol(s):
     return expr.Symbol(s)
 
 
-def make_String(self, s):
-    return expr.String(s)
+def make_String(s):
+    return mathx.core.string.String(s)
 
 
-def make_Integer(self, x):
-    return expr.Integer(x)
+def make_Integer(x):
+    return nums.Integer(x)
 
 
-def make_Rational(self, x, y):
-    return expr.Rational(x, y)
+def make_Rational(x, y):
+    return nums.Rational(x, y)
 
 
-def make_MachineReal(self, x):
-    return expr.MachineReal(x)
+def make_MachineReal(x):
+    return nums.MachineReal(x)
 
 
-def make_PrecisionReal(self, value, prec):
+def make_PrecisionReal(value, prec):
     if value[0] == "Rational":
         assert len(value) == 3
         x = sympy.Rational(*value[1:])
@@ -232,11 +234,11 @@ def make_PrecisionReal(self, value, prec):
     else:
         assert False
 
-    return expr.PrecisionReal(sympy.Float(x, prec))
+    return nums.PrecisionReal(sympy.Float(x, prec))
 
 
-def make_Expression(self, head, children):
-    return expr.Expression(head, *children)
+def make_Expression(head, children):
+    return expr.Expr(head, *children)
 
 
 def do_convert(node):
@@ -259,15 +261,18 @@ def do_convert(node):
         return "Expression", head, children
 
 
-def convert(self, node, definitions):
+def convert(node, definitions):
+
+    assert hasattr(definitions, 'lookup_symbol_name')
+
     result = do_convert(node)
 
     if result[0] == "Lookup":
-        value = definitions.lookup_name(*result[1:])
+        value = definitions.lookup_symbol_name(*result[1:])
         return expr.Symbol(value)
         
     else:
-        return locals()["make_" + result[0]](*result[1:])
+        return globals()["make_" + result[0]](*result[1:])
 
 
 # Exported functions or classes, do not use any other function if you

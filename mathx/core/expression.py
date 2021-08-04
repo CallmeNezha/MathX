@@ -1,9 +1,6 @@
-from collections import namedtuple
-
 from .basic import Basic, Atom
-from .numbers import Real, MachineReal, PrecisionReal, Integer, Rational, Complex
+from .context import ContextName
 
-ContextName = namedtuple('ContextName', 'context name')
 
 
 class Expr(Basic):
@@ -28,8 +25,8 @@ class Expr(Basic):
     def leaves(self):
         return self._leaves
 
-    def __repr__(self):
-        return f"<{self._head.__class__.__name__}: {self}>"
+    # def __repr__(self):
+    #     return f"<Expression: {self}>"
 
 
 class AtomicExpr(Atom, Expr):
@@ -84,6 +81,11 @@ class Symbol(AtomicExpr):
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.ctx_name}>"
+
 
 Symbol0 = Symbol("Symbol", unit=True)
 
+
+__all__ = ['Symbol0', 'Symbol', 'Expr', 'AtomicExpr', 'ContextName']
